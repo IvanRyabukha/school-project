@@ -1,18 +1,45 @@
-//import org.riv.webschool.entity.Grade;
-//import org.riv.webschool.entity.Student;
-//
-//import java.sql.SQLException;
-//
-//public class Application {
-//    public static void main(String[] args) throws SQLException {
-//        Student student = new Student("Vadim", "Makron", "11-A");
-//        Grade grade = new Grade("11-A");
-//        grade.getStdent().forEach(System.out::println);
-////        gradeBook.addStudent(student);
-////        gradeBook.setMark(12, gradeBook.getStudent().get(0), Subject.MATH);
-////        gradeBook.changeMark(12, gradeBook.getStudent().get(0));
-//
-//
-////       gradeBook.removeStudent(gradeBook.getStudent().get(0));
-//    }
-//}
+
+import org.riv.webschool.entity.Student;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+
+public class Application {
+    public static void main(String[] args) throws SQLException {
+        String email = "email@.com";
+        if (!email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+            System.out.println(false);
+        }
+        HashMap<String, String> teacherRules = new HashMap<>();
+        teacherRules.put("firstName", "^[A-z]{2,}$");
+        teacherRules.put("lastName", "^[A-z]{2,}$");
+        teacherRules.put("subject", "^(?i)(math|history|literature|biology|chemistry)$");
+        teacherRules.put("teacherId", "^\\d+$");
+        teacherRules.put("passport", "^[A-Z]{2}\\d{6}$");
+
+        HashMap<String, String[]> teacherValues = new HashMap<>();
+        teacherValues.put("firstName", new String[]{"Aboba1"});
+        teacherValues.put("lastName", new String[]{"Aboboas"});
+        teacherValues.put("subject", new String[]{"MATH"});
+        teacherValues.put("teacherId", new String[]{"322"});
+        teacherValues.put("passport", new String[]{"AA1488888"});
+
+        List<String> params = List.of("firstName", "lastName", "subject", "teacherId", "passport");
+        System.out.println(validateParams(teacherRules, teacherValues, params));
+
+
+
+    }
+
+    private static HashMap<String, String> validateParams(HashMap<String,String> rules, HashMap<String, String[]> values, List<String> params) {
+        HashMap<String, String> result = new HashMap<>();
+        for (String param : params) {
+           if (!values.get(param)[0].matches(rules.get(param))) {
+               result.put(param, "Неверное значение поля");
+           }
+        }
+        return result;
+
+    }
+}

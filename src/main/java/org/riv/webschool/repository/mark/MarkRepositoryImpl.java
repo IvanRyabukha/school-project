@@ -90,7 +90,7 @@ public class MarkRepositoryImpl implements MarkRepository {
         }
         return -1L;
     }
-
+    //УСТАНОВИТЬ ОГРАНИЧЕНИЕ НА ОЕНКУ (ОТ 1 ДО 12)
     @Override
     public void updateMark(int newMark, Long studentId, Subject subject) throws SQLException {
         try (PreparedStatement statement = getConnection().prepareStatement(UPDATE_QUERY)) {

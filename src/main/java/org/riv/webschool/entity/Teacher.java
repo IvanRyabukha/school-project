@@ -1,11 +1,11 @@
 package org.riv.webschool.entity;
 
 public class Teacher {
-    private String firstName;
-    private String lastName;
-    private Subject subject;
-    private Long teacherId;
-    private String passport;
+    private String firstName; // ^[a-Z]{2,}$
+    private String lastName; // ^[a-Z]{2,}$
+    private Subject subject; // ^(?i)(math|history|literature|biology|chemistry)$
+    private Long teacherId; // ^\d+$
+    private String passport; // ^[A-Z]{2}\d{6}$
 
     public Teacher(String firstName, String lastName, Subject subject, Long teacherId, String passportSeries) {
         this.firstName = firstName;
