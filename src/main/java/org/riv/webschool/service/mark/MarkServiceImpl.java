@@ -2,37 +2,35 @@ package org.riv.webschool.service.mark;
 
 import org.riv.webschool.entity.Mark;
 import org.riv.webschool.entity.Subject;
+import org.riv.webschool.repository.exception.PersistenceException;
 import org.riv.webschool.repository.mark.MarkRepository;
 import org.riv.webschool.repository.mark.MarkRepositoryImpl;
+import org.riv.webschool.service.BaseService;
+import org.riv.webschool.service.exception.ServiceException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-public class MarkServiceImpl implements MarkService {
-    MarkRepository markRepository = new MarkRepositoryImpl();
+public class MarkServiceImpl extends BaseService<Long, Mark, MarkRepositoryImpl> implements MarkService {
 
+   public MarkServiceImpl() {
+        super(new MarkRepositoryImpl());
+    }
     @Override
-    public ArrayList<Mark> getMark(Long studentId) throws SQLException {
-        return markRepository.getMark(studentId);
+    public ArrayList<Mark> getMarkByStudentId(Long studentId) throws ServiceException {
+        try {
+            return repository.getMarkByStudentId(studentId);
+        } catch (PersistenceException e) {
+            throw new ServiceException("Error", e);
+        }
     }
 
     @Override
-    public ArrayList<Mark> getAllMarksByGradeAndBySubjectId(Integer gradeId, Integer subjectId) throws SQLException {
-        return markRepository.getAllMarksByGradeAndBySubjectId(gradeId, subjectId);
-    }
-
-    @Override
-    public Long addMark(int mark, Long studentId, Subject subject) throws SQLException {
-        return markRepository.addMark(mark, studentId, subject);
-    }
-
-    @Override
-    public void updateMark(int newMark, Long studentId, Subject subject) throws SQLException {
-        markRepository.updateMark(newMark, studentId, subject);
-    }
-
-    @Override
-    public void removeMark(Long id) throws SQLException {
-        markRepository.removeMark(id);
+    public ArrayList<Mark> getAllMarksByGradeAndBySubjectId(Integer gradeId, Integer subject_id) throws ServiceException {
+        try {
+            return repository.getAllMarksByGradeAndBySubjectId(gradeId, subject_id);
+        } catch (PersistenceException e) {
+            throw new ServiceException("Error", e);
+        }
     }
 }

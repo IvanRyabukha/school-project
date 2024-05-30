@@ -1,42 +1,34 @@
 package org.riv.webschool.service.student;
 
 import org.riv.webschool.entity.Student;
+import org.riv.webschool.repository.exception.PersistenceException;
 import org.riv.webschool.repository.student.StudentRepository;
 import org.riv.webschool.repository.student.StudentRepositoryImpl;
+import org.riv.webschool.service.BaseService;
+import org.riv.webschool.service.exception.ServiceException;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 
-public class StudentServiceImpl implements StudentService {
-    private final StudentRepository studentRepository = new StudentRepositoryImpl();
-
-    @Override
-    public Long addStudent(Student student) throws SQLException {
-        return studentRepository.addStudent(student);
+public class StudentServiceImpl extends BaseService<Long, Student, StudentRepositoryImpl> implements StudentService {
+    public StudentServiceImpl() {
+        super(new StudentRepositoryImpl());
     }
 
     @Override
-    public Student getStudent(Long id) throws SQLException {
-        return studentRepository.getStudent(id);
+    public ArrayList<Student> getAll() throws ServiceException {
+        try {
+            return repository.getAll();
+        } catch (PersistenceException e) {
+            throw new ServiceException("Error", e);
+        }
     }
 
     @Override
-    public void updateStudent(Student student) throws SQLException {
-        studentRepository.updateStudent(student);
-    }
-
-    @Override
-    public void removeStudent(Long id) throws SQLException {
-        studentRepository.removeStudent(id);
-    }
-
-    @Override
-    public ArrayList<Student> getAll() throws SQLException {
-        return studentRepository.getAll();
-    }
-
-    @Override
-    public ArrayList<Student> getAllByGrade(Integer grade) {
-        return studentRepository.getAllByGrade(grade);
+    public ArrayList<Student> getAllByGrade(Integer grade) throws ServiceException {
+        try {
+            return repository.getAllByGrade(grade);
+        } catch (PersistenceException e) {
+            throw new ServiceException("Error", e);
+        }
     }
 }

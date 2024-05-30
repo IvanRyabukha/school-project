@@ -1,39 +1,105 @@
 package org.riv.webschool.repository.mark;
 
 import org.riv.webschool.entity.Mark;
-import org.riv.webschool.entity.Subject;
+import org.riv.webschool.repository.BaseRepository;
+import org.riv.webschool.repository.exception.FatalPersistenceException;
+import org.riv.webschool.repository.exception.PersistenceException;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
-public class MarkRepositoryImpl implements MarkRepository {
-    private static final String URL = "jdbc:postgresql://localhost:5432/sch_student";
-    private static final String USERNAME = "postgres";
-    private static final String PASSWORD = "postgres";
+public class MarkRepositoryImpl extends BaseRepository<Long, Mark> implements MarkRepository {
 
-    private static final String INSERT_QUERY = "INSERT INTO mark(subject_id, mark, student_id, grade_id) " +
-            "VALUES(?, ?, ?, (SELECT grade_id FROM student WHERE student_id = ?))";
-    private static final String SELECT_BY_STUDENT_ID_QUERY = "SELECT * FROM mark WHERE student_id = ?";
-    private static final String SELECT_BY_GRADE_ID_AND_BY_SUBJECT_ID_QUERY = "SELECT * FROM mark WHERE grade_id = ? AND subject_id = ?";
-    private static final String UPDATE_QUERY = "UPDATE mark SET mark = ? WHERE student_id = ? AND subject_id = ?";
-    private static final String REMOVE_QUERY = "DELETE FROM mark WHERE id = ?";
-
-    public MarkRepositoryImpl() {
-        try {
-            Class.forName("org.postgresql.Driver");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USERNAME, PASSWORD);
+    @Override
+    protected String getCreateQuery() {
+        return "INSERT INTO mark(subject_id, mark, student_id, grade_id)" +
+                "VALUES(?, ?, ?, (SELECT grade_id FROM student WHERE student_id = ?))";
     }
 
     @Override
-    public ArrayList<Mark> getMark(Long studentId) throws SQLException {
+    protected String getReadQuery() {
+        return "SELECT * FROM mark WHERE id = ?";
+    }
+
+    @Override
+    protected String getUpdateQuery() {
+        return "UPDATE mark SET mark = ? WHERE student_id = ? AND subject_id = ?";
+    }
+
+    @Override
+    protected String getDeleteQuery() {
+        return "DELETE FROM mark WHERE id = ?";
+    }
+
+    @Override
+    protected void prepareCreateStatement(PreparedStatement preparedStatement, Mark mark) throws PersistenceException {
+        try {
+            preparedStatement.setInt(1, mark.getSubjectId());
+            preparedStatement.setInt(2, mark.getValue());
+            preparedStatement.setLong(3, mark.getStudentId());
+            preparedStatement.setInt(4, mark.getGradeId());
+        } catch (SQLException e) {
+            throw new PersistenceException("Error", e);
+        }
+    }
+
+    @Override
+    protected void prepareReadStatement(PreparedStatement preparedStatement, Long id) throws PersistenceException {
+        try {
+            preparedStatement.setLong(1, id);
+        } catch (SQLException e) {
+            throw new PersistenceException("Error", e);
+        }
+    }
+
+    @Override
+    protected void prepareUpdateStatement(PreparedStatement preparedStatement, Mark mark) throws PersistenceException {
+        try {
+            preparedStatement.setLong(1, mark.getStudentId());
+            preparedStatement.setLong(2, mark.getSubjectId());
+        } catch (SQLException e) {
+            throw new PersistenceException("Error", e);
+        }
+    }
+
+    @Override
+    protected void prepareDeleteStatement(PreparedStatement preparedStatement, Long id) throws PersistenceException {
+        try {
+            preparedStatement.setLong(1, id);
+        } catch (SQLException e) {
+            throw new PersistenceException("Error", e);
+        }
+    }
+
+    @Override
+    protected Long getIdFromResultSet(ResultSet resultSet) throws PersistenceException {
+        try {
+            return resultSet.getLong("id");
+        } catch (SQLException e) {
+            throw new PersistenceException("Error", e);
+        }
+    }
+
+    @Override
+    protected Mark getEntityFromResultSet(ResultSet resultSet) throws PersistenceException {
+        try {
+            return new Mark(
+                    resultSet.getLong("id"),
+                    resultSet.getLong("student_id"),
+                    resultSet.getInt("subject_id"),
+                    resultSet.getInt("mark"),
+                    resultSet.getInt("grade_id"));
+        } catch (SQLException e) {
+            throw new PersistenceException("Error", e);
+        }
+    }
+
+    @Override
+    public ArrayList<Mark> getMarkByStudentId(Long studentId) throws PersistenceException {
         ArrayList<Mark> result = new ArrayList<>();
-        try (PreparedStatement statement = getConnection().prepareStatement(SELECT_BY_STUDENT_ID_QUERY)) {
+        try (PreparedStatement statement = dataSource.getConnection().prepareStatement("SELECT * FROM mark WHERE student_id = ?")) {
             statement.setLong(1, studentId);
             ResultSet resultSet = statement.executeQuery();
             while (resultSet.next()) {
@@ -44,17 +110,22 @@ public class MarkRepositoryImpl implements MarkRepository {
                         resultSet.getInt("mark"),
                         resultSet.getInt("grade_id")));
             }
+            dataSource.commit();
         } catch (SQLException e) {
-            e.printStackTrace();
+            try {
+                dataSource.rollbackConnection();
+            } catch (SQLException ex) {
+                throw new FatalPersistenceException("Error", ex);
+            }
+            throw new PersistenceException("Error", e);
         }
         return result;
     }
 
     @Override
-    public ArrayList<Mark> getAllMarksByGradeAndBySubjectId(Integer gradeId, Integer subjectId) throws SQLException {
+    public ArrayList<Mark> getAllMarksByGradeAndBySubjectId(Integer gradeId, Integer subjectId) throws PersistenceException {
         ArrayList<Mark> result = new ArrayList<>();
-        try (PreparedStatement statement = getConnection().prepareStatement(SELECT_BY_GRADE_ID_AND_BY_SUBJECT_ID_QUERY)) {
-
+        try (PreparedStatement statement = dataSource.getConnection().prepareStatement("SELECT * FROM mark WHERE grade_id = ? AND subject_id = ?")) {
             statement.setInt(1, gradeId);
             statement.setInt(2, subjectId);
             ResultSet resultSet = statement.executeQuery();
@@ -66,50 +137,15 @@ public class MarkRepositoryImpl implements MarkRepository {
                         resultSet.getInt("mark"),
                         gradeId));
             }
+            dataSource.commit();
         } catch (SQLException e) {
-            e.printStackTrace();
+            try {
+                dataSource.rollbackConnection();
+            } catch (SQLException ex) {
+                throw new FatalPersistenceException("Error", ex);
+            }
+            throw new PersistenceException("Error", e);
         }
         return result;
-    }
-
-    @Override
-    public Long addMark(int mark, Long studentId, Subject subject) throws SQLException {
-        try (PreparedStatement statement = getConnection().prepareStatement(INSERT_QUERY, Statement.RETURN_GENERATED_KEYS)) {
-            statement.setInt(1, subject.getId());
-            statement.setInt(2, mark);
-            statement.setLong(3, studentId);
-            statement.setLong(4, studentId);
-            if (statement.executeUpdate() != 0) {
-                ResultSet generatedKeys = statement.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    return generatedKeys.getLong("id");
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return -1L;
-    }
-    //УСТАНОВИТЬ ОГРАНИЧЕНИЕ НА ОЕНКУ (ОТ 1 ДО 12)
-    @Override
-    public void updateMark(int newMark, Long studentId, Subject subject) throws SQLException {
-        try (PreparedStatement statement = getConnection().prepareStatement(UPDATE_QUERY)) {
-            statement.setInt(1, newMark);
-            statement.setLong(2, studentId);
-            statement.setLong(3, subject.getId());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void removeMark(Long id) throws SQLException {
-        try (PreparedStatement statement = getConnection().prepareStatement(REMOVE_QUERY)) {
-            statement.setLong(1, id);
-            if (statement.executeUpdate() == 0) {
-                throw new SQLException("Оценка не удалена!");
-            }
-        }
     }
 }

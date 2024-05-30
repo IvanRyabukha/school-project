@@ -6,7 +6,6 @@ import org.riv.webschool.repository.BaseRepository;
 import org.riv.webschool.repository.exception.FatalPersistenceException;
 import org.riv.webschool.repository.exception.PersistenceException;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -103,7 +102,7 @@ public class TeacherRepositoryImpl extends BaseRepository<Long, Teacher> impleme
     @Override
     public ArrayList<Teacher> getAll() throws PersistenceException {
         ArrayList<Teacher> result = new ArrayList<>();
-        try (PreparedStatement statement = getConnection().prepareStatement("SELECT * FROM teacher");
+        try (PreparedStatement statement = dataSource.getConnection().prepareStatement("SELECT * FROM teacher");
              ResultSet resultSet = statement.executeQuery()) {
             while ((resultSet.next())) {
                 result.add(new Teacher(
@@ -113,10 +112,10 @@ public class TeacherRepositoryImpl extends BaseRepository<Long, Teacher> impleme
                         resultSet.getLong("teacher_id"),
                         resultSet.getString("passport")));
             }
-            commit();
+            dataSource.commit();
         } catch (SQLException e) {
             try {
-                closeConnection();
+                dataSource.rollbackConnection();
             } catch (SQLException ex) {
                 throw new FatalPersistenceException("Error", ex);
             }
@@ -128,7 +127,7 @@ public class TeacherRepositoryImpl extends BaseRepository<Long, Teacher> impleme
     @Override
     public ArrayList<Teacher> getAllBySubject(Subject subject) throws PersistenceException{
         ArrayList<Teacher> result = new ArrayList<>();
-        try (PreparedStatement statement = getConnection().prepareStatement("SELECT * FROM teacher WHERE subject = ?")) {
+        try (PreparedStatement statement = dataSource.getConnection().prepareStatement("SELECT * FROM teacher WHERE subject = ?")) {
             statement.setString(1, String.valueOf(subject.getId()));
             ResultSet resultSet = statement.executeQuery();
             while ((resultSet.next())) {
@@ -139,10 +138,10 @@ public class TeacherRepositoryImpl extends BaseRepository<Long, Teacher> impleme
                         resultSet.getLong("student_id"),
                         resultSet.getString("birth_certificate")));
             }
-            commit();
+            dataSource.commit();
         } catch (SQLException e) {
             try {
-                closeConnection();
+                dataSource.rollbackConnection();
             } catch (SQLException ex) {
                 throw new PersistenceException("Error", ex);
             }

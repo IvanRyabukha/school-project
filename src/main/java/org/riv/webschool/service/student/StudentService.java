@@ -1,20 +1,12 @@
 package org.riv.webschool.service.student;
 
 import org.riv.webschool.entity.Student;
+import org.riv.webschool.service.exception.ServiceException;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 
 public interface StudentService {
-    Long addStudent(Student student) throws SQLException; //Create
+    ArrayList<Student> getAll() throws ServiceException;
 
-    Student getStudent(Long id) throws SQLException; //Read
-
-    void updateStudent(Student student) throws SQLException; //Update
-
-    void removeStudent(Long id) throws SQLException; //Delete
-
-    ArrayList<Student> getAll() throws SQLException;
-
-    ArrayList<Student> getAllByGrade(Integer grade);
+    ArrayList<Student> getAllByGrade(Integer grade) throws ServiceException;
 }

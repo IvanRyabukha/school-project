@@ -11,7 +11,7 @@ public abstract class BaseService<ID, T, R extends BaseRepository<ID, T>> {
         this.repository = repository;
     }
 
-    protected ID create(T entity) throws ServiceException {
+    public ID create(T entity) throws ServiceException {
         try {
             return repository.create(entity);
         } catch (PersistenceException e) {
@@ -19,7 +19,7 @@ public abstract class BaseService<ID, T, R extends BaseRepository<ID, T>> {
         }
     }
 
-    protected T read(ID id) throws ServiceException {
+    public T read(ID id) throws ServiceException {
         try {
             return repository.read(id);
         } catch (PersistenceException e) {
@@ -27,7 +27,7 @@ public abstract class BaseService<ID, T, R extends BaseRepository<ID, T>> {
         }
     }
 
-    protected void update(T entity) throws ServiceException {
+    public void update(T entity) throws ServiceException {
         try {
             repository.update(entity);
         } catch (PersistenceException e) {
@@ -35,7 +35,7 @@ public abstract class BaseService<ID, T, R extends BaseRepository<ID, T>> {
         }
     }
 
-    protected void remove(ID id) throws ServiceException {
+    public void remove(ID id) throws ServiceException {
         try {
             repository.remove(id);
         } catch (PersistenceException e) {

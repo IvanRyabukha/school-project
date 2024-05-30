@@ -1,7 +1,6 @@
 package org.riv.webschool.repository;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
+import org.riv.webschool.configuration.DataSource;
 import org.riv.webschool.repository.exception.FatalPersistenceException;
 import org.riv.webschool.repository.exception.PersistenceException;
 
@@ -9,42 +8,7 @@ import java.sql.*;
 
 public abstract class BaseRepository<ID, T> {
 
-    private Connection connection;
-
-    private static final HikariConfig config = new HikariConfig();
-    private static final HikariDataSource ds;
-
-    static {
-        try {
-            Class.forName("org.postgresql.Driver");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        config.setJdbcUrl("jdbc:postgresql://localhost:5432/sch_student");
-        config.setUsername("postgres");
-        config.setPassword("postgres");
-        config.addDataSourceProperty("cachePrepStmts", "true");
-        config.addDataSourceProperty("prepStmtCacheSize", "250");
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-        ds = new HikariDataSource(config);
-    }
-    // Connection only with transaction
-    protected Connection getConnection() throws SQLException {
-        Connection connection = ds.getConnection();
-        connection.setAutoCommit(false);
-        connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
-        this.connection = connection;
-        return connection;
-    }
-
-    protected void closeConnection() throws SQLException {
-        this.connection.rollback();
-        this.connection = null;
-    }
-    protected void commit() throws SQLException {
-        this.connection.commit();
-    }
+    protected final DataSource dataSource = new DataSource();
 
     protected abstract String getCreateQuery();
 
@@ -67,7 +31,7 @@ public abstract class BaseRepository<ID, T> {
     protected abstract T getEntityFromResultSet(ResultSet resultSet) throws PersistenceException;
 
     public ID create(T entity) throws PersistenceException {
-        try (Connection connection = getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(getCreateQuery(), Statement.RETURN_GENERATED_KEYS)) {
             prepareCreateStatement(preparedStatement, entity);
             if (preparedStatement.executeUpdate() > 0) {
@@ -80,7 +44,7 @@ public abstract class BaseRepository<ID, T> {
             }
         } catch (SQLException e) {
             try {
-                closeConnection();
+                dataSource.rollbackConnection();
             } catch (SQLException ex) {
                 throw new FatalPersistenceException("Error", ex);
             }
@@ -90,7 +54,7 @@ public abstract class BaseRepository<ID, T> {
     }
 
     public T read(ID id) throws PersistenceException {
-        try (Connection connection = getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(getReadQuery())) {
             prepareReadStatement(preparedStatement, id);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -101,7 +65,7 @@ public abstract class BaseRepository<ID, T> {
             }
         } catch (SQLException e) {
             try {
-                closeConnection();
+                dataSource.rollbackConnection();
             } catch (SQLException ex) {
                 throw new FatalPersistenceException("Error", ex);
             }
@@ -111,7 +75,7 @@ public abstract class BaseRepository<ID, T> {
     }
 
     public void update(T entity) throws PersistenceException {
-        try (Connection connection = getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(getUpdateQuery())) {
             prepareUpdateStatement(preparedStatement, entity);
             int i = preparedStatement.executeUpdate();
@@ -121,7 +85,7 @@ public abstract class BaseRepository<ID, T> {
             }
         } catch (SQLException e) {
             try {
-                closeConnection();
+                dataSource.rollbackConnection();
             } catch (SQLException ex) {
                 throw new FatalPersistenceException("Error", ex);
             }
@@ -130,7 +94,7 @@ public abstract class BaseRepository<ID, T> {
     }
 
     public void remove(ID id) throws PersistenceException {
-        try (Connection connection = getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(getDeleteQuery())) {
             prepareDeleteStatement(preparedStatement, id);
             int i = preparedStatement.executeUpdate();
@@ -140,7 +104,7 @@ public abstract class BaseRepository<ID, T> {
             }
         } catch (SQLException e) {
             try {
-                closeConnection();
+                dataSource.rollbackConnection();
             } catch (SQLException ex) {
                 throw new FatalPersistenceException("Error", ex);
             }
